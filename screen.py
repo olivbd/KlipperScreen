@@ -13,6 +13,7 @@ import signal
 import subprocess
 import pathlib
 import traceback  # noqa
+import tracemalloc
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib, Pango
@@ -78,8 +79,11 @@ class KlipperScreen(Gtk.Window):
     updating = False
     update_queue = []
     _ws = None
+    initial_snapshot = None
+    switch_count = 0
 
     def __init__(self, args, version):
+        tracemalloc.start()
         self.dpms_timeout = None
         self.version = version
 
@@ -247,6 +251,25 @@ class KlipperScreen(Gtk.Window):
 
         self.connected_printer = name
         logging.debug("Connected to printer: %s" % name)
+
+        self.memory_trace()
+
+    def memory_trace(self):
+        snapshot = tracemalloc.take_snapshot()
+        snapshot = snapshot.filter_traces((
+            tracemalloc.Filter(False, "<frozen importlib._bootstrap_external>"),
+            tracemalloc.Filter(False, "<unknown>"),
+            tracemalloc.Filter(False, tracemalloc.__file__),
+        ))
+        if self.initial_snapshot is None:
+            self.initial_snapshot = snapshot
+            logging.debug("[ Initial memory snapshot ]")
+        else:
+            self.switch_count += 1
+            logging.debug("[ Top 10 memory diffs (Switched: %d times)]", self.switch_count)
+            top_stats = snapshot.compare_to(self.initial_snapshot, 'lineno')
+            for stat in top_stats[:10]:
+                logging.debug(stat)
 
     def ws_subscribe(self):
         requested_updates = {
