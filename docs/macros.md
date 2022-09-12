@@ -32,7 +32,7 @@ this could be interesting to tweak the purge speed, this would be one Example Ma
 [gcode_macro LOAD_FILAMENT]
 gcode:
     {% set speed = params.SPEED|default(300) %}
-    {% set max_velocity = printer.configfile.settings['extruder'].max_extrude_only_velocity %}
+    {% set max_velocity = printer.configfile.settings['extruder'].max_extrude_only_velocity * 60 %}
     M300 # beep
     G91
     G92 E0
@@ -46,7 +46,7 @@ gcode:
 [gcode_macro UNLOAD_FILAMENT]
 gcode:
     {% set speed = params.SPEED|default(300) %}
-    {% set max_velocity = printer.configfile.settings['extruder'].max_extrude_only_velocity %}
+    {% set max_velocity = printer.configfile.settings['extruder'].max_extrude_only_velocity * 60 %}
     G91
     M300 # beep
     G92 E0
